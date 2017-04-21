@@ -1,0 +1,35 @@
+{
+  "name": "slack-dareboost",
+  "version": "1.0.0",
+  "description": "Automate Dareboost tests from Slack",
+  "main": "src/index.js",
+  "watch": {
+    "test": {
+      "patterns": [
+        "src",
+        "test"
+      ],
+      "extensions": "js,jsx"
+    }
+  },
+  "scripts": {
+    "test": "echo 'no test specified'",
+    "start": "node src/index.js",
+    "dev": "nodemon src/index.js",
+    "watch": "npm-watch"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git@github.com:julienmession/slack-dareboost.git"
+  },
+  "author": "jmession",
+  "license": "ISC",
+  "homepage": "https://github.com/julienmession/slack-dareboost",
+  "dependencies": {
+    "body-parser": "^1.17.1",
+    "dotenv": "^4.0.0",
+    "express": "^4.15.0",
+    "mongoose": "^4.8.5",
+    "request": "^2.81.0"
+  }
+}
