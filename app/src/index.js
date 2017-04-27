@@ -79,7 +79,7 @@ app.post('/slack/command/dareboost', function (req, res) {
        
             // Analysis may take a long time, so send a response right now.
             // Another responses will come later.
-            res.json({text: 'Launch Analysis'});
+            res.json({text: 'Launch Analysis on '+text});
             pageCheckerController.checkURL(dareboostToken, text, true, function (err, json) {
                 console.log(err, json);
                 if (err) {
