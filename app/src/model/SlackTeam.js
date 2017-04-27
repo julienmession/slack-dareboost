@@ -10,7 +10,11 @@ var Schema = mongoose.Schema({
         default: ''
     },
     authInfo: {},
-    teamInfo: {}
+    teamInfo: {},
+    dareboostToken: {
+        type: String,
+        default:''
+    }
 });
 
 module.exports = mongoose.model('SlackTeam', Schema);

@@ -3,7 +3,7 @@ const SlackTeam = require('../model/SlackTeam');
 const Link = require('../model/Link'); 
 const User = require('../model/User');
 const noteHelper = require('../helper/NoteHelper');
-
+const slackHelper = require('../helper/SlackHelper');
 
 function SlackController() {}
 
@@ -60,6 +60,10 @@ SlackController.prototype.auth = function(code, callback) {
     } else {
        return callback('Missing arguments');
     }
+}
+
+SlackController.prototype.saveDareboostToken = function(slackTeamId, token, callback) {
+    slackHelper.setTeamData (slackTeamId, {dareboostToken:token}, callback);
 }
 
 SlackController.prototype.action = function(actions, callbackId, callback) {

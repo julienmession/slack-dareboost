@@ -47,7 +47,7 @@ app.post('/slack/command/dareboost', function (req, res) {
   
     var command = req.body.command ? req.body.command : '';
 
-    if (command != '/dareboost' || process.env.SLACK_APP_VERIFICATION_TOKEN != req.body.token || !req.body.user_id) {
+    if (command != process.env.DAREBOOST_COMMAND || process.env.SLACK_APP_VERIFICATION_TOKEN != req.body.token || !req.body.user_id) {
         res.send('Wrong command, missing arguments');
     }
 
@@ -55,13 +55,44 @@ app.post('/slack/command/dareboost', function (req, res) {
     var text = req.body.text ? req.body.text : '';
     var channelId = req.body.channel_id ? req.body.channel_id : '';
 
-    if (text) {
-
-        pageCheckerController.checkURL('http://code.fabernovel.com', true, function (err, ret) {
+    // save the team dareboost token
+    if (text.indexOf('token') == 0) {
+        var token = text.replace(/\b(token|\b\s)*/, '');
+        if (!token) {
+            return res.send('use \'' + process.env.DAREBOOST_COMMAND + ' token YOUR-DAREBOOST-TOKEN\' to save your token');
+        }
+        slackController.saveDareboostToken(req.body.team_id, token, function(err, str) {
             if (err) {
-                return res.send(err);
+                return res.send('Error : token not saved');
             }
-            return res.send(ret);
+            return res.send('Token Saved ! Add your first URL to test with \''+process.env.DAREBOOST_COMMAND+' YOUR-URL\'');
+        });
+    } else if (text == 'help') {
+        res.send('TODO');
+    } else if (text) {
+
+        // is there a dareboost token for this team ?
+        slackHelper.getTeamData(req.body.team_id, 'dareboostToken', function(err, dareboostToken) {
+            if (err || !dareboostToken) {
+                return res.send('No Dareboost token found ! TODO');
+            }
+       
+            // Analysis may take a long time, so send a response right now.
+            // Another responses will come later.
+            res.json({text: 'Launch Analysis'});
+            pageCheckerController.checkURL(dareboostToken, text, true, function (err, json) {
+                console.log(err, json);
+                if (err) {
+                    return slackHelper.sendResponse(req.body.response_url, {text: err}, function(err, ret) {
+                        console.log(err, ret);
+                    });
+                }
+                // send only one response directly.
+                // analysis is in progress or finished, use the response_url given by slack to update the status
+                return slackHelper.sendResponse(req.body.response_url, json.message, function(err, ret) {
+                    console.log(err, ret);
+                });
+            });
         });
 
     } else {
@@ -85,18 +116,18 @@ app.post('/slack/action', function (req, res) {
 });
 
 app.get('/dareboost-test', function (req, res) {
-    pageCheckerController.checkURL('http://code.fabernovel.com', true, function (err, ret) {
+    //pageCheckerController.checkURL('http://code.fabernovel.com', true, function (err, ret) {
+    pageCheckerController.getReport('57f36eef0cf2f2c777535fe2', '5900d3550cf28ebd2359d0d8', function (err, json) {
         if (err) {
             return res.send(err);
         }
-        return res.send(ret);
+        return res.json(json);
     });
 });
 
 app.get('/test', function (req, res) {
-    res.send(
-        noteHelper.findLinks('https://buzzaka.atlassian.net/secure/RapidBoard.jspa?rapidView=64&view=planning.nodetail')
-    );
+    var text = 'token UAHFA73981hafeihaef';
+    res.send(text.replace(/\b(token|\b\s)*/, ''));
 });
 
 app.listen(port, function () {

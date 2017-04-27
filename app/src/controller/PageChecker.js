@@ -1,4 +1,5 @@
 const request = require('request');
+const dareboostHelper = require('../helper/DareboostHelper');
 
 function PageChecker() {}
 
@@ -12,41 +13,73 @@ function PageChecker() {}
  }
  -> {"status":200,"message":"OK","reportId":"57f77db30cf2f2c777547778"}
 */
-PageChecker.prototype.checkURL = function (url, useAuth, callback) {
+PageChecker.prototype.checkURL = function (token, url, useAuth, callback) {
+    console.log('checkURL', url);
     var self = this;
-    /* var postData = {url: url};
+    var postData = {url: url};
     if (useAuth) {
         postData.basicAuth = {
             user: process.env.BASIC_AUTH_LOGIN,
             password: process.env.BASIC_AUTH_PWD
         };
     }
-    this.callDareboost('analysis/launch', postData, function(err, body) {
+    // launch the analysis
+    this.callDareboost(token, 'analysis/launch', postData, function(err, body) {
         if (err || !body.reportId) {
-            return callback('Error while launching the Dareboost analysis');
+            console.log(err, body);
+            var message = body.message ? body.message : 'analysis aborted';
+            return callback('Dareboost error: ' + message);
         }
         console.log("reportId = "+body.reportId);
-        self.getReport(body.reportId, callback);
+        // get the report.
+        setTimeout(function() {
+            self.getReport(token, body.reportId, callback);
+        }, 5000);
     });
-    */
-    self.getReport('58f7e8b70cf28ebd23547a35', callback);
+    // debug
+    // this.getReport('58f7e8b70cf28ebd23547a35', callback);
 }
 
-PageChecker.prototype.getReport = function (reportId, callback) {
-    this.callDareboost('analysis/report', {reportId: reportId}, function(err, body) {
-        callback(err, body);
+PageChecker.prototype.getReport = function (token, reportId, callback) {
+    var self = this;
+    console.log('getReport', reportId);
+    this.callDareboost(token, 'analysis/report', {reportId: reportId}, function(err, body) {
+        console.log('getReport response : ', reportId, err, body);
+        if (err) {
+            return callback(err);
+        }
+        if (body.status == '202') {
+            // the analysis is processing. Wait 5 sec to try again
+            setTimeout(function() {
+                console.log('setTimeout getReport');
+                self.getReport(token, reportId, callback);
+            }, 5000);
+            // return callback(false, {status:'inprogress', message: {response_type: 'ephemeral', text: 'Analysis in progress...'+Math.random()}});
+        } else if (body.status == '200') {
+            var message = dareboostHelper.formatReport(body);
+            message.response_type = 'ephemeral';
+            return callback(false, {status:'ok', message: message});
+        } else {
+            // error
+            return callback('Error ' + body.status + ': ' + body.message);
+        }
     });
 }
 
-PageChecker.prototype.callDareboost = function (slug, postData, callback) {
-    postData.token = process.env.DAREBOOST_TOKEN;
+PageChecker.prototype.formatReport = function (jsonReport) {
+    return jsonReport;
+}
+
+PageChecker.prototype.callDareboost = function (token, slug, postData, callback) {
+    postData.token = token;
     request({
         uri: process.env.DAREBOOST_API_URL + slug,
         method: 'POST',
         json: postData,
         },
-        function (err, res, body) {
-            if (err || res.statusCode != 200) {
+        function (err, ret, body) {
+            console.log('callDareboost '+slug, err, ret.statusCode);
+            if (err || ret.statusCode != 200) {
                 return callback(err);
             }
             return callback(false, body);
