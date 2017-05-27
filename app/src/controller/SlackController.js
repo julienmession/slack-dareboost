@@ -1,8 +1,6 @@
 const request = require('request');
 const SlackTeam = require('../model/SlackTeam');
-const Link = require('../model/Link'); 
 const User = require('../model/User');
-const noteHelper = require('../helper/NoteHelper');
 const slackHelper = require('../helper/SlackHelper');
 
 function SlackController() {}
@@ -27,7 +25,7 @@ SlackController.prototype.auth = function(code, callback) {
             method: 'GET'
         }
         request(options.uri, function (err, res, body) {
-            var authInfo = JSON.parse(body)
+            var authInfo = JSON.parse(body);
             if (!authInfo.ok){
                 return callback("Error: \n"+JSON.stringify(authInfo));
             } else {
@@ -40,13 +38,18 @@ SlackController.prototype.auth = function(code, callback) {
                             return callback(err);
                         }
                         var teamInfo = JSON.parse(body).team;
-                        
                         // save Slack Team info
-                        var slackTeam = new SlackTeam;
-                        slackTeam.slackTeamId = teamInfo.id;
-                        slackTeam.slackInfo   = authInfo;
-                        slackTeam.teamInfo    = teamInfo;
-                        slackTeam.save(function(err) {
+
+                        SlackTeam.findOneAndUpdate({
+                            slackTeamId : teamInfo.id
+                        },
+                        {
+                            slackTeamId : teamInfo.id,
+                            authInfo    : authInfo,
+                            teamInfo    : teamInfo
+                        },
+                        {upsert:true},
+                        function(err) {
                            if (err) {
                                return callback('SlackTeam not saved');
                            } else {
@@ -59,73 +62,6 @@ SlackController.prototype.auth = function(code, callback) {
         });
     } else {
        return callback('Missing arguments');
-    }
-}
-
-SlackController.prototype.saveDareboostToken = function(slackTeamId, token, callback) {
-    slackHelper.setTeamData (slackTeamId, {dareboostToken:token}, callback);
-}
-
-SlackController.prototype.action = function(actions, callbackId, callback) {
-    if (actions.length && actions[0].value) {
-        switch(actions[0].value) {
-            case 'del':
-            Link.findOne({_id: callbackId}).exec().then(function(link) {
-                if (!link) {
-                    return callback('This link has already been deleted');
-                }
-                var channelId = link.channelId;
-                link.remove(function(err) {
-                    if (err) {
-                        return callback('Error while deleting the note');
-                    }
-                    return noteHelper.getChannelNotes('Note removed !', channelId, false, false, callback);
-                });
-             });
-             break;
-           
-             case 'edit':
-                 return noteHelper.getChannelNotes('Edit notes', callbackId, true, false, callback);
-             break;
-             case 'cancel':
-                 return noteHelper.getChannelNotes('Notes', callbackId, false, false, callback);
-             break;
-        }
-    } else {
-        callback('Unknown action');
-    }
-}
-
-/**
- * manage link attached to a channel
- * @param slackUserId String 
- * @param channelId String
- * @param str String
- * @param Function callback
- */
-SlackController.prototype.linkFromSlackCommand = function (slackUserId, channelId, str, callback) {
-    console.log('linkFromSlackCommand', slackUserId, channelId, str);
-    var self = this;
-    if (str == 'help') {
-        return callback(false, {
-            text :
-            "'/n' or '/n all' lists all entries attached to this channel\n" +
-            "'/n MY TEXT' saves a simple free text\n" + 
-            "'/n LABEL URL' saves a url with a label\n" +
-            "'/n search MY SEARCHED TEXT' searches in your Google Drive documents"
-        });
-    }
-
-    var editMode = (str == 'del' || str == 'admin' || str == 'edit');
-
-    if (!str || 'all' == str || editMode) {
-         
-        return noteHelper.getChannelNotes('All notes', channelId, editMode, 'all' == str, callback);
-
-    }
-    else
-    {
-        return noteHelper.saveNote(str, channelId, slackUserId, callback);
     }
 }
 
