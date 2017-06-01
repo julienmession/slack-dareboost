@@ -60,21 +60,27 @@ AnalyserController.prototype.warnTeam = function(team, callback) {
 }
 
 /**
- * send a bot message for all old analyses 
+ * send a bot message with a Dareboost Tip for all recent analyses
  */
 AnalyserController.prototype.sendTips = function(callback) {
-    // find recent analyses : 7 days since last check
+    // find recent analyses with a report
     var responses = [];
-    Analysis.find({}).exec((err, analyses) => {
+
+    var datenow = new Date();
+    var cutoff = new Date(datenow.getTime() - parseInt(process.env.ANALYSIS_PEREMPTION_IN_SECONDS)*1000);
+
+    Analysis.find({lastReport: { $ne: null }, updatedAt: {$gt : cutoff}}).exec((err, analyses) => {
         analyses.forEach((analysis) => {
-            var tipMessage = analysis.getRandomTip(1);
+            var tipMessage = analysis.getRandomTip();
             responses.push(tipMessage);
 
-            // TODO : build here the ip Slack message rather than in the analysis ?
+            // TODO : build here the tip Slack message rather than in the analysis ?
             slackHelper.sendBotMessage(tipMessage, null, (err, ret) => {
+                console.log('sendBotMessage', err, ret);
             });
         });
-        callback(false, responses.join("\n<br/>"));
+        //TODONOW : don't show urls in return
+        return callback(false, JSON.stringify(responses));
     });
 }
 

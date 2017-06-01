@@ -60,8 +60,8 @@ var Schema = mongoose.Schema({
 /**
  * return the tip corresponding to the index in the tips list
  */
-Schema.methods.getTip = function(tipId) {
-    return dareboostHelper.getReportTip(this.lastReport, tipId);
+Schema.methods.getTip = function(tipId, escapeHTML) {
+    return dareboostHelper.getReportTip(this.lastReport, tipId, escapeHTML);
 }
 
 /**
@@ -133,21 +133,12 @@ Schema.methods.toChatMessage = function() {
 /**
  * return a tip from the lastReport
  */
-Schema.methods.getRandomTip = function(count) {
+Schema.methods.getRandomTip = function() {
     var message = {
-            text       :'Improve your Dareboost score on '+this.url,
+            text       :'*Improve your Dareboost score on '+this.url + "*\n",
             channel    : this.channelId,
             teamId     : this.slackTeamId
     }
-    message.attachments = this.getTipAttachments(1);
-    return message;
-}
-
-/**
- * Returns a random tip from the last report
- */
-Schema.methods.getTipAttachments = function(count) {
-    var attachments = [];
     if (this.lastReport && this.lastReport.tips) {
         var tips = this.lastReport.tips.filter(
             (tip) => {return tip.score != 100}
@@ -155,29 +146,12 @@ Schema.methods.getTipAttachments = function(count) {
         var tipIndex = Math.floor(Math.random() * tips.length);
         var tip = tips[tipIndex];
         
-        attachments = [
-            {
-                text:'score: '+tip.score
-            },
-            {
-                pretext: tip.name,
-                text   : this.formatTipAdvice(tip.advice)
-            }
-        ];
+        message.text += '*Score: '+tip.score + "*\n"+tip.name+"\n"+dareboostHelper.formatTipAdvice(tip.advice);
     }
-    return attachments;
+    
+    return message;
 }
 
-/**
- * Replace HTML tags into Slack markdown
- */
-Schema.methods.formatTipAdvice = function(str) {
-    str = str.replace('<p>', '')
-    .replace('</p>', "\n")
-    .replace(/<br\/?>/, "\n")
-    .replace(/<h[1-5]\/?/, "*");//bold
-    return str;
-}
 
 /**
  * Launch a dareboost analysis
@@ -214,7 +188,6 @@ Schema.methods.startAnalysis = function(token, postData) {
     this.callDareboost(token, 'analysis/launch', postData, (err, body) => {
         
         if (err || !body.reportId) {
-            console.log('launch : ', err, body);
             var message = body.message ? body.message : 'analysis aborted';
             this.status = 'error';
             this.save((err) => {
@@ -222,10 +195,10 @@ Schema.methods.startAnalysis = function(token, postData) {
             });
             return;
         }
-        self.emit('analysis');
+        this.emit('analysis');
         // get the report.
-        setTimeout(function() {
-            self.getDareboostReport(token, body.reportId);
+        setTimeout(() => {
+            this.getDareboostReport(token, body.reportId);
         }, 10000);
     });
 }
@@ -236,23 +209,22 @@ Schema.methods.startAnalysis = function(token, postData) {
  * and then emit 'report' event to notify listeners that the report is available
  */
 Schema.methods.getDareboostReport = function (token, reportId) {
-    var self = this;
     console.log('getReport', reportId);
-    this.callDareboost(token, 'analysis/report', {reportId: reportId}, function(err, body) {
+    this.callDareboost(token, 'analysis/report', {reportId: reportId}, (err, body) => {
         
         if (err) {
             this.status = 'error';
             this.save(function(err) {
-                return self.emit('error', err);
+                return this.emit('error', err);
             });
             return;
         }
 
         if (body.status == '202') {
             // the analysis is processing. Wait 10 sec to try again
-            setTimeout(function() {
+            setTimeout(() => {
                 console.log('setTimeout getReport');
-                self.getDareboostReport(token, reportId);
+                this.getDareboostReport(token, reportId);
             }, 10000);
 
         } else if (body.status == '200') {
@@ -267,30 +239,30 @@ Schema.methods.getDareboostReport = function (token, reportId) {
             };
             var report = new Report({
                 reportId: reportId,
-                analysis: self._id,
+                analysis: this._id,
                 report  : reportSummary,
             });
-            report.save(function(err) {
+            report.save((err) => {
                 if (err) {
-                    return self.emit('error', err);
+                    return this.emit('error', err);
                 }
             });
 
             // update the analysis : add report summary to list of reports
             // and replace the lastReport
-            self.lastReport = body.report;
-            self.reports.unshift(report._id);
-            self.status = 'done';
-            self.updatedAt = new Date();
-            self.save(function(err) {
+            this.lastReport = body.report;
+            this.reports.unshift(report._id);
+            this.status = 'done';
+            this.updatedAt = new Date();
+            this.save((err) => {
                 if (err) {
-                    return self.emit('error', err);
+                    return this.emit('error', err);
                 }
-                self.emit('report');
+                this.emit('report');
             });
         } else {
             // error
-            self.emit('error', new Error(body.status + ': ' + body.message));
+            this.emit('error', new Error(body.status + ': ' + body.message));
         }
     });
 }

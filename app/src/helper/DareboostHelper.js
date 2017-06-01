@@ -4,15 +4,15 @@ function DareboostHelper () {
             label: 'Score',
             unit: '%',
             factor: 1,
-            levels: {green: [85, 100], orange: [70, 85]},
-            tip : 'At least 85%'
+            levels: {green: [80, 100], orange: [70, 80]},
+            tip : 'At least 80%'
         },
         loadTime: {
             label: 'Load Time',
             unit: 's',
             factor: '0.001',
-            levels: {green: [0, 1000], orange: [1000, 2000]},
-            tip: 'Less thant 1 sec'
+            levels: {green: [0, 2000], orange: [2000, 3000]},
+            tip: 'Less thant 2 sec'
         },
         weight: {
             label: 'Weight',
@@ -53,7 +53,7 @@ DareboostHelper.prototype.formatReportValue = function(key, value) {
     
     var color = 'red';
     for (var c in format.levels) {
-        if (value > format.levels[c] && value <= format.levels[c]) {
+        if (value > format.levels[c][0] && value <= format.levels[c][1]) {
             color = c;
             break;
         }
@@ -67,6 +67,22 @@ DareboostHelper.prototype.formatReportValue = function(key, value) {
         color   :this.colors[color],
         text    : color == 'green' ? '' : format.tip
     };
+}
+
+/**
+ * Replace HTML tags into Slack markdown
+ */
+DareboostHelper.prototype.formatTipAdvice = function(str) {
+    str = str.replace(/<\/?(div|p)([^>]*)>/g, "\n")
+    .replace(/<br\/?>/g, "\n")
+    .replace(/<\/?pre[^>]*>/g, "```") // long code
+    .replace(/<\/?img[^>]*src="([^"]*)"[^>]*>/g, '$1') //bold
+    .replace(/<\/?h[1-5]>/g, "*") //bold
+    .replace(/<\/?strong[^>]*>/g, "*") // bold
+    .replace(/<\/?code[^>]*>/g, "`") // bold
+    .replace(/<a .*href="([^"]*)".*>([^<]*)<\/a>/g, '<$1|$2>')
+    .replace(/<\/?ul>/g, "").replace(/<li>/g, "  - ").replace(/<\/li>/g, "\n") // replace ul li
+    return str;
 }
 
 /**
@@ -93,8 +109,8 @@ DareboostHelper.prototype.reportToAttachments = function(report) {
 /**
  * return the tip of a report corresponding to the tipId
  */
-DareboostHelper.prototype.getReportTip = function(report, tipId) {
-    // TODO : format the output
+DareboostHelper.prototype.getReportTip = function(report, tipId, escapeHTML) {
+    // TODO : format the output according to escapeHTML value
     if (report.tips[tipId]) {
         return report.tips[tipId].advice;
     }
