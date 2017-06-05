@@ -1,0 +1,6 @@
+{
+  "name": "slack-dareboost-jm",
+  "script": "src/index.js",
+  "watch": true,
+  "ignore_watch": ["node_modules"]
+}

@@ -8,7 +8,7 @@ function AnalyserController() {
     // dareboost analyses in a channel
     this.analysisChannelList = new SlackChannelItemList({
         ItemClass:Analysis,
-        slackCommand:process.env.DAREBOOST_COMMAND,
+        slackCommand:process.env.SLACK_COMMAND,
         title:'List of URLs to analyse',
         alwaysEditMode:true
     });
@@ -168,7 +168,9 @@ AnalyserController.prototype.analyse = function (analysis, callback) {
     this.getDareboostToken(analysis.slackTeamId, (err, dareboostToken) => {
 
         if (err || !dareboostToken) {
-            return callback(new Error('No Dareboost token found !'));
+            return callback(new Error("No Dareboost token found !\nType '"
+                + process.env.SLACK_COMMAND
+                + " token YOUR_DAREBOOST_TOKEN' to save it"));
         }
 
         // TODO error managementt

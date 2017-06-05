@@ -48,7 +48,7 @@ router.get('/auth/redirect', (req, res) => {
 /**
  * Command from Slack
  */
-router.post('/command/dareboost', (req, res) => {
+router.post('/command' + process.env.SLACK_COMMAND, (req, res) => {
 
     if (!req.body.command) {
         throw new Error('Missing Command');
@@ -56,7 +56,7 @@ router.post('/command/dareboost', (req, res) => {
   
     var command = req.body.command ? req.body.command : '';
 
-    if (command != process.env.DAREBOOST_COMMAND ||
+    if (command != process.env.SLACK_COMMAND ||
         process.env.SLACK_APP_VERIFICATION_TOKEN != req.body.token ||
         ! req.body.user_id ||
         ! req.body.channel_id ||
@@ -75,13 +75,13 @@ router.post('/command/dareboost', (req, res) => {
     if (text.indexOf('token') == 0) {
         var token = text.replace(/\b(token|\b\s)*/, '');
         if (!token) {
-            return res.send('use \'' + process.env.DAREBOOST_COMMAND + ' token YOUR-DAREBOOST-TOKEN\' to save your token');
+            return res.send('Use \'' + process.env.SLACK_COMMAND + ' token YOUR-DAREBOOST-TOKEN\' to save your token');
         }
         analyserController.saveDareboostToken(teamId, token, (err) => {
             if (err) {
                 return res.send('Error : token not saved');
             }
-            return res.send('Token Saved ! Add your first URL to test with \''+process.env.DAREBOOST_COMMAND+' YOUR-URL\'');
+            return res.send('Token Saved ! Add your first URL to test with \''+process.env.SLACK_COMMAND+' YOUR-URL\'');
         });
     } else if (text == 'help') {
         // display the command help
@@ -96,17 +96,20 @@ router.post('/command/dareboost', (req, res) => {
         analyserController.addAnalysis(teamId, channelId, slackUserId, text, (err, json) => {
 
             if (err) {
-                return slackHelper.sendResponse(responseUrl, {text: err}, (err, ret) => {
+                console.log('addAnalysis', err, json);
+                return slackHelper.sendResponse(responseUrl, {text: err.message}, (err, ret) => {
                     console.log(err, ret);
                 });
             }
+            // send message with bot
             var message = {text:json.text, attachments:json.attachments};
             message.channel = channelId;
             message.teamId  = teamId;
 
             slackHelper.sendBotMessage(message, responseUrl, (err) => {
-                if (err)
+                if (err) {
                     console.log('sendBotMessage', err);
+                }
             });
         });
 

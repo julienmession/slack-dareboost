@@ -3,11 +3,12 @@ const SlackTeam = require('../model/SlackTeam');
 
 function SlackHelper() { }
 
-SlackHelper.sendBotInvitationMessage = function (responseUrl, callback) {
+SlackHelper.prototype.sendBotInvitationMessage = function (responseUrl, callback) {
+    console.log('sendBotInvitationMessage', responseUrl);
     if (!responseUrl)
         return;
 
-    return slackHelper.sendResponse(responseUrl, {
+    return this.sendResponse(responseUrl, {
         // TODO change this message
         text: 'Please invite @' + process.env.SLACK_BOT_NAME + ' in this channel to let him chat with you'
     }, (err, ret) => {
@@ -55,6 +56,7 @@ SlackHelper.prototype.sendBotMessage = function (message, fallbackResponseUrl, c
             if (err) {
                 return callback(err);
             } else if (!body.ok) {
+                console.log('error : ', body);
                 switch (body.error) {
                     // TODO : check another errors
                     // channel_not_found may be caused by a try to write in a private channel 
