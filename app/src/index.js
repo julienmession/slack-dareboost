@@ -15,6 +15,7 @@ app.use(bodyParser.urlencoded({ extended: true }));
 app.use(express.static(__dirname + '/public'));
 app.use('/slack', require('./route/slack'));
 app.use('/test', require('./route/test'));
+app.use('/', require('./route/front'));
 
 app.listen(port, function () {
   console.log('App listening on port '+port);

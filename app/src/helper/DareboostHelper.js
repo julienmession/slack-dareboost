@@ -111,8 +111,11 @@ DareboostHelper.prototype.reportToAttachments = function(report) {
  */
 DareboostHelper.prototype.getReportTip = function(report, tipId, escapeHTML) {
     // TODO : format the output according to escapeHTML value
-    if (report.tips[tipId]) {
-        return report.tips[tipId].advice;
+    var tips = report.tips.filter(
+        (tip) => {return tip.score != 100}
+    );
+    if (tips[tipId]) {
+        return tips[tipId].advice;
     }
     return 'No Tip';
 }

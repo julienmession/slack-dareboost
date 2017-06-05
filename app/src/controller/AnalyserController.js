@@ -84,9 +84,8 @@ AnalyserController.prototype.sendTips = function(callback) {
     });
 }
 
-AnalyserController.prototype.getTip = function(analysisId, tipId, callback) {
+AnalyserController.prototype.getReportTip = function(analysisId, tipId, callback) {
     Analysis.find({_id:analysisId}).exec((err, analysis) => {
-        console.log(analysis);
         callback(false, analysis.getTip(tipId));
     });
 }

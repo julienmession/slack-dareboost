@@ -23,15 +23,6 @@ router.get('/tips', (req, res) => {
 });
 
 /**
- * Loop on all teams, send bot message with tips associated with the last analyses
- */
-router.get('/tip/:analysisId-:tipId', (req, res) => {
-    analyserController.getTip(req.params.analysisId, req.params.tipId, (ret) => {
-        res.send(ret);
-    });
-});
-
-/**
  * Show the slack button
  */
 router.get('/button', (req, res) => {
@@ -94,7 +85,7 @@ router.post('/command/dareboost', (req, res) => {
         });
     } else if (text == 'help') {
         // display the command help
-        res.send('TODO');
+        res.send();
     } else if (text) {
         // add analysis on this text (= URL)
 
@@ -141,7 +132,7 @@ router.post('/command/dareboost', (req, res) => {
 
 router.post('/action', (req, res) => {
     params = JSON.parse(req.body.payload);
-    // send nothing now, let callback be called later to sed response via slack response_url
+    // send nothing now, let callback be called later to send response via slack response_url
     res.send("");
 
     analyserController.action(params, (err, json) => {

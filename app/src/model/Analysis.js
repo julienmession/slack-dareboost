@@ -78,7 +78,7 @@ Schema.methods.toAttachment = function(callback) {
         attachment.text += ' - ' + dareboostHelper.reportToString(r);
         attachment.color = dareboostHelper.getReportColor(r);
     }
-    if ('pending' == this.status) {
+    if ('pending' === this.status) {
         attachment.text += "\nPending...\n";
     } else {
         attachment.text += " ("+ ta.ago(this.updatedAt)+")";
@@ -116,7 +116,7 @@ Schema.methods.toChatMessage = function() {
     // add analyse button
     attachment = {callback_id: this._id};
     if ('pending' === this.status) {
-        attachment.text = "Analysis pending...";
+        attachment.text = "Pending...";
     } else {
         attachment.text = "Last analysis: "+ ta.ago(this.updatedAt);
         attachment.actions = [
@@ -146,7 +146,10 @@ Schema.methods.getRandomTip = function() {
         var tipIndex = Math.floor(Math.random() * tips.length);
         var tip = tips[tipIndex];
         
-        message.text += '*Score: '+tip.score + "*\n"+tip.name+"\n"+dareboostHelper.formatTipAdvice(tip.advice);
+        message.text += tip.name 
+            + " (score: " + tip.score + ")\n"
+            + "<" + process.env.DOMAIN + "/tip/" + this._id + "-" + tipIndex + "|" + tip.name + ">\n"
+            + dareboostHelper.formatTipAdvice(tip.advice);
     }
     
     return message;
@@ -188,18 +191,17 @@ Schema.methods.startAnalysis = function(token, postData) {
     this.callDareboost(token, 'analysis/launch', postData, (err, body) => {
         
         if (err || !body.reportId) {
-            var message = body.message ? body.message : 'analysis aborted';
             this.status = 'error';
-            this.save((err) => {
+            this.save((error) => {
                 return this.emit('error', err);
             });
-            return;
+        } else {
+            this.emit('analysis');
+            // get the report.
+            setTimeout(() => {
+                this.getDareboostReport(token, body.reportId);
+            }, 10000);
         }
-        this.emit('analysis');
-        // get the report.
-        setTimeout(() => {
-            this.getDareboostReport(token, body.reportId);
-        }, 10000);
     });
 }
 
