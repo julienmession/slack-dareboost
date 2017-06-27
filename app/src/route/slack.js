@@ -94,7 +94,18 @@ router.post('/command' + process.env.SLACK_COMMAND, (req, res) => {
         }
     } else if (text == 'help') {
         // display the command help
-        res.send('Not ready yet');
+        res.send('');
+
+        // send message with bot
+        var message = {text: 'https://youtu.be/1I9vsm5BREo?t=49s'};
+        message.channel = channelId;
+        message.teamId  = teamId;
+
+        slackHelper.sendBotMessage(message, responseUrl, (err) => {
+            if (err) {
+                console.log('sendBotMessage', err);
+            }
+        });
     } else if (text) {
         // add analysis on this text (= URL)
 

@@ -35,13 +35,13 @@ function DareboostHelper () {
             levels: {green: [0, 2000], orange: [2000, 4500], red: [4500, 8000]},
             tip : 'Should be less than 1000, but below 3500 is acceptable'
         },
-        // firstByte: {
-        //     label: 'Time To First Byte',
-        //     unit: 'ms',
-        //     factor: 1,
-        //     levels: {green: [0, 2000], orange: [2000, 4500], red: [4500, 8000]},
-        //     tip : 'Should be less than 200ms'
-        // },
+        firstByte: {
+            label: 'Time To First Byte',
+            unit: 'ms',
+            factor: 1,
+            levels: {green: [0, 2000], orange: [2000, 4500], red: [4500, 8000]},
+            tip : 'Should be less than 200ms'
+        },
         startRender: {
             label: 'Start Render',
             unit: 'ms',
@@ -128,7 +128,7 @@ DareboostHelper.prototype.reportToAttachments = function(report) {
         this.formatReportValue('weight', summary.weight),
         this.formatReportValue('requestsCount', summary.requestsCount),
         this.formatReportValue('speedIndex', summary.speedIndex),
-        // this.formatReportValue('firstByte', summary.firstByte),
+        this.formatReportValue('firstByte', summary.firstByte),
         this.formatReportValue('startRender', summary.startRender)
     ];
     return attachments;
