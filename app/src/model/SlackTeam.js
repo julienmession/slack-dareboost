@@ -14,6 +14,10 @@ var Schema = mongoose.Schema({
     dareboostToken: {
         type: String,
         default:''
+    },
+    wptToken: {
+        type: String,
+        default: ''
     }
 });
 

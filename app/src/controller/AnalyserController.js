@@ -43,6 +43,7 @@ AnalyserController.prototype.warnTeams = function(callback) {
 AnalyserController.prototype.warnTeam = function(team, callback) {
     var datenow = new Date();
     var cutoff = new Date(datenow.getTime() - parseInt(process.env.ANALYSIS_PEREMPTION_IN_SECONDS)*1000);
+    console.log(cutoff);
     Analysis.find({slackTeamId:team.teamInfo.id, updatedAt: {$lt : cutoff}})
     .exec((err, analyses) => {
         // TODO manage err
@@ -94,17 +95,28 @@ AnalyserController.prototype.getReportTip = function(analysisId, tipId, callback
 AnalyserController.prototype.saveDareboostToken = function(slackTeamId, token, callback) {
     slackHelper.setTeamData(slackTeamId, {dareboostToken:token}, callback);
 }
+
 AnalyserController.prototype.getDareboostToken = function (slackTeamId, callback) {
     slackHelper.getTeamData(slackTeamId, 'dareboostToken', callback);
+}
+
+// WebPageTest token management
+AnalyserController.prototype.saveWPTToken = function (slackTeamId, token, callback) {
+    console.log('saving WPT token');
+    slackHelper.setTeamData(slackTeamId, {wptToken:token}, callback);
+}
+
+AnalyserController.prototype.getWPTToken = function (slackTeamId, callback) {
+    slackHelper.getTeamData(slackTeamId, 'wptToken', callback);
 }
 
 /**
  * call when an action is performed on one of the list button
  */
 AnalyserController.prototype.action = function (action, callback) {
-    console.log('action', action);
-    switch (action.actions[0].name) {
+    // console.log('action', action);
 
+    switch (action.actions[0].name) {
         case 'tip':
         // TODONOW
         Analysis.findOne({_id: action.callback_id}).exec((err, analysis) => {
@@ -116,6 +128,16 @@ AnalyserController.prototype.action = function (action, callback) {
             });
         });
         break;
+
+        case 'tips':
+        console.log('--- TIPS ---');
+        Analysis.findOne({_id: action.callback_id}).exec((err, analysis) => {
+            if (err) return callback(err);
+            var tips = analysis.getTip(-1);
+            console.log(tips);
+        });
+        break;
+        
         case 'analyse':
         Analysis.findOne({_id: action.callback_id}).exec((err, analysis) => {
             if (err)
@@ -190,9 +212,11 @@ AnalyserController.prototype.analyse = function (analysis, callback) {
         });
         
         analysis.once('error', (err) => {
+            console.log('###########', err);
+            
             // all is done on this analysis, cleanup
             analysis.removeAllListeners();
-            console.log('###########', err);
+            var message = analysis.toChatMessage();
             callback(err);
         });
 

@@ -55,6 +55,7 @@ var Schema = mongoose.Schema({
         type: mongoose.Schema.Types.Mixed,
         default:null
     }
+
 });
 
 /**
@@ -72,27 +73,38 @@ Schema.methods.toAttachment = function(callback) {
     var attachment = {
         text       : this.url,
         callback_id: this._id,
+        actions    : []
     };
     if (this.lastReport) {
         var r = this.lastReport;
         attachment.text += ' - ' + dareboostHelper.reportToString(r);
         attachment.color = dareboostHelper.getReportColor(r);
+
+        // Added tip button
+        // Commented for the moment, we'll do this later
+        // attachment.actions.push(this.getTipButton());
     }
     if ('pending' === this.status) {
-        attachment.text += "\nPending...\n";
-    } else {
-        attachment.text += " ("+ ta.ago(this.updatedAt)+")";
-        attachment.actions = [
-            this.getAnalyseButton(),
-            this.getTipButton()
-        ];
+        attachment.text += "\nLet me do my job, i'll get back to you later...\n";
+    } else if ('error' === this.status) {
+        attachment.text += "\nAn error occurred during analysis, \nPlease relaunch one or delete and add another URL\n";
+    }
+    attachment.text += " ("+ ta.ago(this.updatedAt)+")";
+    if ('pending' !== this.status) {
+        attachment.actions.unshift(this.getAnalyseButton());
     }
     return attachment;
 }
 
 Schema.methods.getTipButton = function() {
-    if (this.lastReport.tips) {
+    if (this.lastReport && this.lastReport.tips) {
         return {"name": "tip", "text": "Tip", "type":"button", "value":"tip"};
+    }
+    return null;
+}
+Schema.methods.getTipsButton = function () {
+    if (this.lastReport && this.lastReport.tips) {
+        return {"name": "tips", "text": "Tips", "type":"button", "value":"tips"};
     }
     return null;
 }
@@ -110,20 +122,31 @@ Schema.methods.toChatMessage = function() {
     // add report
     if (this.lastReport) {
         var r = this.lastReport;
+        console.log('CUSTOM LAST REPORT --> ', r.summary);
         message.text += ' - See the full report <'+dareboostHelper.getReportUrl(r)+'|here>';
         attachments = dareboostHelper.reportToAttachments(r);
     }
     // add analyse button
     attachment = {callback_id: this._id};
+    
     if ('pending' === this.status) {
         attachment.text = "Pending...";
+    } else if (this.status === 'error') {
+        attachment.text = "An error occurred during analysis...";
     } else {
+        // var tip  = this.getTipButton(),
+        //     tips = this.getTipsButton();
+        var tip, tips;
+
         attachment.text = "Last analysis: "+ ta.ago(this.updatedAt);
         attachment.actions = [
-            this.getAnalyseButton(),
-            this.getTipButton(),
+            this.getAnalyseButton()
         ];
+
+        if (tip) attachment.actions.push(tip);
+        if (tips) attachment.actions.push(tips);
     }
+
     attachments.push(attachment);
     message.attachments = attachments;
 
@@ -169,7 +192,10 @@ Schema.methods.getRandomTip = function() {
 Schema.methods.launch = function (token) {
     console.log('checkURL', this.url);
     var self = this;
-    var postData = {url: this.url};
+    var postData = {
+        url: this.url,
+        visualMetrics: true
+    };
     // TODO : extract auth in url
     /* if (this.useAuth) {
         postData.basicAuth = {
@@ -186,10 +212,8 @@ Schema.methods.launch = function (token) {
 };
 
 Schema.methods.startAnalysis = function(token, postData) {
-
     // launch the analysis
     this.callDareboost(token, 'analysis/launch', postData, (err, body) => {
-        
         if (err || !body.reportId) {
             this.status = 'error';
             this.save((error) => {
@@ -199,7 +223,7 @@ Schema.methods.startAnalysis = function(token, postData) {
             this.emit('analysis');
             // get the report.
             setTimeout(() => {
-                this.getDareboostReport(token, body.reportId);
+                this.getDareboostReport(token, body.reportId, 0);
             }, 10000);
         }
     });
@@ -210,13 +234,14 @@ Schema.methods.startAnalysis = function(token, postData) {
  * If the analysis is still pending, wait the end of the process
  * and then emit 'report' event to notify listeners that the report is available
  */
-Schema.methods.getDareboostReport = function (token, reportId) {
+Schema.methods.getDareboostReport = function (token, reportId, count) {
     console.log('getReport', reportId);
     this.callDareboost(token, 'analysis/report', {reportId: reportId}, (err, body) => {
         
         if (err) {
             this.status = 'error';
             this.save(function(err) {
+                console.log('status changed and failed');
                 return this.emit('error', err);
             });
             return;
@@ -226,19 +251,37 @@ Schema.methods.getDareboostReport = function (token, reportId) {
             // the analysis is processing. Wait 10 sec to try again
             setTimeout(() => {
                 console.log('setTimeout getReport');
-                this.getDareboostReport(token, reportId);
+                this.getDareboostReport(token, reportId, count+1);
             }, 10000);
 
         } else if (body.status == '200') {
+            console.log('report status 200');
 
             // analyses is finished, here is the report
+            // console.log('DAREBOOST REPORT --> ', body.report);
 
-            // create new report            
+            // create new report
+            // console.log('TTFB ---------->', body.report.performanceTimings.firstByte);
+            // console.log('DATE ---------->', body.report.date);
+            // console.log('DIFF ---------->', body.report.performanceTimings.firstByte - body.report.performanceTimings.navigationStart);
+            
             var reportSummary = {
-                summary  : body.report.summary,
+                summary  : {
+                    loadTime: body.report.summary.loadTime,
+                    score: body.report.summary.score,
+                    requestsCount: body.report.summary.requestsCount,
+                    weight: body.report.summary.weight,
+                    speedIndex: body.report.timings.speedIndex,
+                    startRender: body.report.timings.startRender,
+                    firstByte: body.report.timings.firstByte
+                },
                 publicReportUrl: body.report.publicReportUrl,
-                tips:[]
+                tips:[...body.report.tips]
             };
+
+            // Here is our custom object report
+            // console.log('CUSTOM REPORT --> ', reportSummary.summary);
+
             var report = new Report({
                 reportId: reportId,
                 analysis: this._id,
@@ -246,6 +289,7 @@ Schema.methods.getDareboostReport = function (token, reportId) {
             });
             report.save((err) => {
                 if (err) {
+                    console.log('report save failed');
                     return this.emit('error', err);
                 }
             });
@@ -253,18 +297,29 @@ Schema.methods.getDareboostReport = function (token, reportId) {
             // update the analysis : add report summary to list of reports
             // and replace the lastReport
             this.lastReport = body.report;
+
+            //Overwriting dareboost summary by mine (which is obviously better)
+            this.lastReport.summary = reportSummary.summary;
             this.reports.unshift(report._id);
             this.status = 'done';
             this.updatedAt = new Date();
             this.save((err) => {
                 if (err) {
+                    console.log('analysis save failed');
                     return this.emit('error', err);
                 }
                 this.emit('report');
             });
         } else {
             // error
-            this.emit('error', new Error(body.status + ': ' + body.message));
+            console.log('status is not 200');
+            this.status = 'error';
+            this.save(err => {
+                console.log('status changed and failed');
+                this.emit('error', new Error(body.status + ': ' + body.message));
+            });
+            
+            return;
         }
     });
 }
@@ -276,7 +331,7 @@ Schema.methods.callDareboost = function (token, slug, postData, callback) {
         method: 'POST',
         json: postData,
     },
-     (err, ret, body) => {
+    (err, ret, body) => {
         console.log('callDareboost '+slug, err, ret.statusCode);
         if (err) {
             return callback(err, body);
