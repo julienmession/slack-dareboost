@@ -192,7 +192,7 @@ AnalyserController.prototype.analyse = function (analysis, callback) {
         if (err || !dareboostToken) {
             return callback(new Error("No Dareboost token found !\nType '"
                 + process.env.SLACK_COMMAND
-                + " token YOUR_DAREBOOST_TOKEN' to save it"));
+                + " token YOUR_SERVICE(dareboost) YOUR_TOKEN' to save it"));
         }
 
         // TODO error managementt
