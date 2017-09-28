@@ -91,7 +91,7 @@ SlackHelper.prototype.setTeamData = function (slackTeamId, data, callback) {
 
 SlackHelper.prototype.getTeamData = function (slackTeamId, attr, callback) {
     SlackTeam.findOne({ slackTeamId: slackTeamId }, (err, slackTeam) => {
-        console.log('getTeamData ' + slackTeamId, err, slackTeam);
+        // console.log('getTeamData ' + slackTeamId, err, slackTeam);
         callback(err, slackTeam[attr]);
     });
 }
@@ -104,6 +104,7 @@ SlackHelper.prototype.sendResponse = function (responseURL, jsonPostData, callba
         json: jsonPostData,
     },
     (err, res, body) => {
+        console.log('--- SEND RESPONSE', err, body);
         if (err || res.statusCode != 200) {
             return callback(err);
         }

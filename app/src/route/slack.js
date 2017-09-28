@@ -49,7 +49,6 @@ router.get('/auth/redirect', (req, res) => {
  * Command from Slack
  */
 router.post('/command' + process.env.SLACK_COMMAND, (req, res) => {
-
     if (!req.body.command) {
         throw new Error('Missing Command');
     }
@@ -73,19 +72,40 @@ router.post('/command' + process.env.SLACK_COMMAND, (req, res) => {
     
     // save the team dareboost token
     if (text.indexOf('token') == 0) {
-        var token = text.replace(/\b(token|\b\s)*/, '');
+        var token = text.replace(/\b(token dareboost|token wpt|\b\s)*/, '');
+
         if (!token) {
-            return res.send('Use \'' + process.env.SLACK_COMMAND + ' token YOUR-DAREBOOST-TOKEN\' to save your token');
+            return res.send('Use \'' + process.env.SLACK_COMMAND + ' token YOUR_SERVICE(dareboost or WPT) YOUR-SERVICE-TOKEN\' to save your token');
         }
-        analyserController.saveDareboostToken(teamId, token, (err) => {
-            if (err) {
-                return res.send('Error : token not saved');
-            }
-            return res.send('Token Saved ! Add your first URL to test with \''+process.env.SLACK_COMMAND+' YOUR-URL\'');
-        });
+        if (text.indexOf('dareboost') == 6) {
+            analyserController.saveDareboostToken(teamId, token, (err) => {
+                if (err) {
+                    return res.send('Error : dareboost token not saved');
+                }
+                return res.send('Token Saved ! Add your first URL to test with \''+process.env.SLACK_COMMAND+' YOUR-URL\'');
+            });
+        } else if (text.indexOf('wpt') == 6) {
+            analyserController.saveWPTToken(teamId, token, (err) => {
+                if (err) {
+                    return res.send('Error : WPT token not saved');
+                }
+                return res.send('Token Saved !');
+            });
+        }
     } else if (text == 'help') {
         // display the command help
-        res.send();
+        res.send('');
+
+        // send message with bot
+        var message = {text: 'https://youtu.be/1I9vsm5BREo?t=49s'};
+        message.channel = channelId;
+        message.teamId  = teamId;
+
+        slackHelper.sendBotMessage(message, responseUrl, (err) => {
+            if (err) {
+                console.log('sendBotMessage', err);
+            }
+        });
     } else if (text) {
         // add analysis on this text (= URL)
 
@@ -114,9 +134,10 @@ router.post('/command' + process.env.SLACK_COMMAND, (req, res) => {
         });
 
     } else {
+        // no argument given, display urls list.
         res.send('');
         analyserController.getAnalysisList(channelId, (err, json) => {
-            console.log('MESSAGE', json);
+            // console.log('MESSAGE', json);
             if (err) { 
                 return slackHelper.sendResponse(responseUrl, {text: err});
             }
@@ -135,11 +156,14 @@ router.post('/command' + process.env.SLACK_COMMAND, (req, res) => {
 
 router.post('/action', (req, res) => {
     params = JSON.parse(req.body.payload);
+    // console.log('action !!!', params);
+
     // send nothing now, let callback be called later to send response via slack response_url
     res.send("");
 
     analyserController.action(params, (err, json) => {
         if (err) {
+            // console.log('LA GROSSE ERRUER', err);
             return slackHelper.sendResponse(params.response_url, {text: err}, (err, ret) => {
                 console.log(err, ret);
             });
