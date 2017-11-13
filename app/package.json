@@ -1,5 +1,5 @@
 {
-  "name": "slack-dareboost",
+  "name": "dareboost-automation",
   "version": "1.0.0",
   "description": "Automate Dareboost tests from Slack",
   "main": "src/index.js",
@@ -13,7 +13,6 @@
     }
   },
   "scripts": {
-    "test": "echo 'no test specified'",
     "start": "node src/index.js",
     "dev": "nodemon src/index.js",
     "watch": "npm-watch"

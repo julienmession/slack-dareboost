@@ -1,2 +1,3 @@
-# slack-dareboost
-Automate Dareboost tests through Slack
+# Dareboost automation
+
+Automate Dareboost tests through multiple ways.

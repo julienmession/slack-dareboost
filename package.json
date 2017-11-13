@@ -1,5 +1,23 @@
 {
-	"dependencies" : { 
-		"jasmine-reporters" : "~2"
-	}	
+  "name": "dareboost-automation",
+  "description": "Automate Dareboost tests through Slack",
+  "version": "1.0.0",
+  "scripts": {},
+  "repository": {
+    "type": "git",
+    "url": "git@github.com:julienmession/slack-dareboost.git"
+  },
+  "keywords": [
+    "dareboost",
+    "slack"
+  ],
+  "author": "",
+  "license": "ISC",
+  "bugs": {
+    "url": "https://github.com/julienmession/slack-dareboost/issues"
+  },
+  "homepage": "https://github.com/julienmession/slack-dareboost#readme",
+  "dependencies": {
+    "jasmine-reporters": "~2"
+  }
 }
