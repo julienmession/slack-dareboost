@@ -128,7 +128,7 @@ Schema.methods.toChatMessage = function() {
     }
     // add analyse button
     attachment = {callback_id: this._id};
-    
+
     if ('pending' === this.status) {
         attachment.text = "Pending...";
     } else if (this.status === 'error') {
@@ -168,13 +168,13 @@ Schema.methods.getRandomTip = function() {
         );
         var tipIndex = Math.floor(Math.random() * tips.length);
         var tip = tips[tipIndex];
-        
-        message.text += tip.name 
+
+        message.text += tip.name
             + " (score: " + tip.score + ")\n"
             + "<" + process.env.DOMAIN + "/tip/" + this._id + "-" + tipIndex + "|" + tip.name + ">\n"
             + dareboostHelper.formatTipAdvice(tip.advice);
     }
-    
+
     return message;
 }
 
@@ -204,7 +204,7 @@ Schema.methods.launch = function (token) {
         };
     }
     */
- 
+
     this.status = 'pending';
     this.save((err) => {
         this.startAnalysis(token, postData);
@@ -237,7 +237,7 @@ Schema.methods.startAnalysis = function(token, postData) {
 Schema.methods.getDareboostReport = function (token, reportId, count) {
     console.log('getReport', reportId);
     this.callDareboost(token, 'analysis/report', {reportId: reportId}, (err, body) => {
-        
+
         if (err) {
             this.status = 'error';
             this.save(function(err) {
@@ -264,7 +264,7 @@ Schema.methods.getDareboostReport = function (token, reportId, count) {
             // console.log('TTFB ---------->', body.report.performanceTimings.firstByte);
             // console.log('DATE ---------->', body.report.date);
             // console.log('DIFF ---------->', body.report.performanceTimings.firstByte - body.report.performanceTimings.navigationStart);
-            
+
             var reportSummary = {
                 summary  : {
                     loadTime: body.report.summary.loadTime,
@@ -318,7 +318,7 @@ Schema.methods.getDareboostReport = function (token, reportId, count) {
                 console.log('status changed and failed');
                 this.emit('error', new Error(body.status + ': ' + body.message));
             });
-            
+
             return;
         }
     });
@@ -342,4 +342,3 @@ Schema.methods.callDareboost = function (token, slug, postData, callback) {
 
 var Analysis = mongoose.model('Analysis', Schema);
 module.exports = Analysis;
-

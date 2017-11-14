@@ -137,7 +137,7 @@ AnalyserController.prototype.action = function (action, callback) {
             console.log(tips);
         });
         break;
-        
+
         case 'analyse':
         Analysis.findOne({_id: action.callback_id}).exec((err, analysis) => {
             if (err)
@@ -210,10 +210,10 @@ AnalyserController.prototype.analyse = function (analysis, callback) {
                 callback(false, message);
             });
         });
-        
+
         analysis.once('error', (err) => {
             console.log('###########', err);
-            
+
             // all is done on this analysis, cleanup
             analysis.removeAllListeners();
             var message = analysis.toChatMessage();
@@ -229,7 +229,7 @@ AnalyserController.prototype.analyse = function (analysis, callback) {
  * Build the list of analyses attached to a channel
  */
 AnalyserController.prototype.getAnalysisList = function (channelId, callback) {
-    this.analysisChannelList.toMessage({channelId:channelId}, false, callback); 
+    this.analysisChannelList.toMessage({channelId:channelId}, false, callback);
 }
 
 module.exports = new AnalyserController();
