@@ -1,0 +1,8 @@
+{
+  "urls": [
+    "http://www.google.com",
+    "http://www.amazon.com"
+  ],
+  "dareboost_api_url": "https://www.dareboost.com/api/0.5/",
+  "dareboost_api_token": "XXXXXXXXX"
+}

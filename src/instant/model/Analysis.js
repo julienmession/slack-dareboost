@@ -1,5 +1,7 @@
 const Dareboost = require('./Dareboost');
 const Report = require('./Report');
+const sleep = require('sleep');
+const colors = require('colors/safe');
 
 var MAX_TRIES = 20;
 var TIME_BETWEEN_TRIES = 5000;
@@ -9,47 +11,39 @@ class Analysis {
     this.url = url;
   }
 
-  launch(callback) {
-    var data = {
+  start(callback) {
+    var response = Dareboost.request('analysis/launch', {
       url: this.url,
       visualMetrics: true,
-    };
-
-    Dareboost.request('analysis/launch', data, (err, body) => {
-      if (err || !body.reportId) {
-        throw new Error(`Analysis was not able to be lauched for "${this.url}"`)
-      } else {
-        callback(body);
-      }
+      isPrivate: true,
     });
-  }
 
-  waitForReport(callback, currentTry = 1) {
-    if (currentTry > MAX_TRIES) {
-      throw new Error('Timeout for report request.');
+    if (!response.body.reportId) {
+      throw new Error(`Error ${response.body.statusCode} for launching analysis for "${this.url}"`)
     }
 
-    this.requestReport((body) => {
-      if (body.status == '202') {
-          setTimeout(() => {
-            this.waitForReport(callback, currentTry + 1);
-          }, TIME_BETWEEN_TRIES);
-      } else if (body.status == '200') {
-          callback(new Report(this, this.reportId, body.report));
-      } else {
-        throw new Error('Error during report request: error ' + body.status);
-      }
-    });
+    this.reportId = response.body.reportId;
+    callback(response.body);
   }
 
-  requestReport(callback) {
-    Dareboost.request('analysis/report', {reportId: this.reportId}, (err, body) => {
-      if (err) {
-        throw new Error('Error during report request: error ' + body.status)
-      }
+  getReport() {
+    var currentTry = 1;
 
-      callback(body);
-    });
+    while (currentTry <= MAX_TRIES) {
+      console.log(`Try #${currentTry} for ${this.url}`);
+      var response = Dareboost.request('analysis/report', {reportId: this.reportId});
+
+      if (response.body.status == 200) {
+        return new Report(this, this.reportId, response.body.report);
+      } else if (response.body.status == 202) {
+        sleep.msleep(TIME_BETWEEN_TRIES);
+        currentTry++;
+      } else {
+        throw new Error(`Error during report request for ${this.url}: error ${response.body.status}`);
+      }
+    }
+
+    throw new Error('Timeout for report request.');
   }
 }
 
