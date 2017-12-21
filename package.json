@@ -1,5 +1,41 @@
 {
-	"dependencies" : { 
-		"jasmine-reporters" : "~2"
-	}	
+  "name": "dareboost-automation",
+  "version": "1.0.0",
+  "description": "Automate Dareboost tests from multiple sources.",
+  "main": "src/slack/index.js",
+  "watch": {
+    "test": {
+      "patterns": [
+        "src",
+        "test"
+      ],
+      "extensions": "js,jsx"
+    }
+  },
+  "scripts": {
+    "start": "node src/slack/index.js",
+    "dev": "nodemon src/slack/index.js",
+    "watch": "npm-watch",
+    "instant-run": "node src/instant/index.js"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git@github.com:julienmession/slack-dareboost.git"
+  },
+  "author": "jmession",
+  "license": "ISC",
+  "homepage": "https://github.com/julienmession/slack-dareboost",
+  "dependencies": {
+    "app-root-dir": "^1.0.2",
+    "body-parser": "^1.17.1",
+    "colors": "^1.1.2",
+    "dotenv": "^4.0.0",
+    "express": "^4.15.0",
+    "mongoose": "^4.8.5",
+    "request": "^2.81.0",
+    "sleep": "^5.1.1",
+    "sync-request": "^4.1.0",
+    "time-ago": "^0.1.0",
+    "webpagetest": "^0.3.5"
+  }
 }
