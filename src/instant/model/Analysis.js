@@ -7,19 +7,16 @@ var MAX_TRIES = 20;
 var TIME_BETWEEN_TRIES = 5000;
 
 class Analysis {
-  constructor(url) {
-    this.url = url;
+  constructor(conf) {
+    this.conf = conf;
   }
 
   start(callback) {
-    var response = Dareboost.request('analysis/launch', {
-      url: this.url,
-      visualMetrics: true,
-      isPrivate: true,
-    });
+    var response = Dareboost.request('analysis/launch', this.conf);
 
     if (!response.body.reportId) {
-      throw new Error(`Error ${response.body.statusCode} for launching analysis for "${this.url}"`)
+      console.log(response);
+      throw new Error(`Error ${response.body.message} for launching analysis for "${this.conf.url}"`)
     }
 
     this.reportId = response.body.reportId;
@@ -30,7 +27,7 @@ class Analysis {
     var currentTry = 1;
 
     while (currentTry <= MAX_TRIES) {
-      console.log(`Try #${currentTry} for ${this.url}`);
+      console.log(`Try #${currentTry} for ${this.conf.url}`);
       var response = Dareboost.request('analysis/report', {reportId: this.reportId});
 
       if (response.body.status == 200) {
@@ -39,7 +36,7 @@ class Analysis {
         sleep.msleep(TIME_BETWEEN_TRIES);
         currentTry++;
       } else {
-        throw new Error(`Error during report request for ${this.url}: error ${response.body.status}`);
+        throw new Error(`Error during report request for ${this.conf.url}: error ${response.body.status}`);
       }
     }
 

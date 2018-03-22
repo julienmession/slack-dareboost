@@ -4,8 +4,8 @@ var request = require('sync-request');
 
 class Dareboost {
 	static request(path, data) {
-		data.token = config.dareboost_api_token;
-		var response = request('POST', config.dareboost_api_url + path, { json: data });
+		data.token = process.env.DAREBOOST_API_TOKEN;
+		var response = request('POST', config.api_url + path, { json: data });
 
 		return {
 			status: response.statusCode,
