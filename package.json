@@ -1,6 +1,6 @@
 {
   "name": "dareboost-automation",
-  "version": "2.1.0",
+  "version": "2.1.1",
   "description": "Automate Dareboost tests from multiple sources.",
   "main": "src/slack/index.js",
   "watch": {

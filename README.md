@@ -8,7 +8,9 @@ Automate Dareboost tests through multiple ways.
 
 2. Create a dareboost.json file at the root of your project directory, based on the [dareboost.json.sample](dareboost.json.sample) file (the following section will explain how to set up the analysis).
 
-3. Run `DAREBOOST_API_TOKEN=XXXX node src/instant/index.js`
+3. Run the script:
+    * Linux / macOS: `DAREBOOST_API_TOKEN=XXXX node src/instant/index.js`
+    * Windows PowerShell: `$env:DAREBOOST_API_TOKEN="XXXX"; node src/instant/index.js`
 
 # Configuration
 
