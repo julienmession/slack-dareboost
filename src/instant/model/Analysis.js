@@ -1,5 +1,3 @@
-const colors = require('colors/safe');
-
 const ApiClient = require('./../api/Client');
 const Report = require('./Report');
 
@@ -56,9 +54,9 @@ class Analysis {
           break;
   
         case 200:
-          const report = new Report(this, this.reportId, response.report);
-          
-          this.displaysReport(report);
+          const report = new Report(response.report);
+
+          report.display();
           break;
       
         default:
@@ -68,17 +66,6 @@ class Analysis {
     } catch (e) {
       throw e;
     }
-  }
-
-  displaysReport(report) {
-		console.info(colors.green(`Analysis complete:`));
-		console.log(colors.bgGreen(colors.black(`SCORE: ${report.summary.score}`)));
-		console.log(colors.bgGreen(colors.black(`Load time: ${report.summary.loadTime/1000}s`)));
-		console.log(colors.bgGreen(colors.black(`HTTP requests: ${report.summary.requestsCount}`)));
-		console.log(colors.bgGreen(colors.black(`Page weight: ${report.summary.weight} bytes`)));
-
-		console.log(colors.green(`More info at ${report.publicReportUrl}`));
-		console.info("\n");
   }
 }
 

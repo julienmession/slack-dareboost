@@ -46,6 +46,7 @@
     "express": "^4.15.0",
     "mongoose": "^4.8.5",
     "request": "^2.81.0",
+    "then-request": "^6.0.0",
     "time-ago": "^0.1.0",
     "webpagetest": "^0.3.5"
   }
