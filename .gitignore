@@ -39,3 +39,4 @@ jspm_packages
 # .env file
 app/.env
 app/pm2.json
+dareboost.json
