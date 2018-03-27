@@ -1,46 +1,71 @@
-const Dareboost = require('./Dareboost');
+const ApiClient = require('./../api/Client');
 const Report = require('./Report');
-const sleep = require('sleep');
-const colors = require('colors/safe');
 
-var MAX_TRIES = 20;
-var TIME_BETWEEN_TRIES = 5000;
+const MAX_TRIES = 20;
+const TIME_BETWEEN_TRIES = 5000;
 
 class Analysis {
   constructor(conf) {
-    this.conf = conf;
-  }
+    this.apiClient = new ApiClient();
 
-  start(callback) {
-    var response = Dareboost.request('analysis/launch', this.conf);
-
-    if (!response.body.reportId) {
-      console.log(response);
-      throw new Error(`Error ${response.body.message} for launching analysis for "${this.conf.url}"`)
+    try {
+      this.start(conf);
+    } catch (e) {
+      throw e;
     }
-
-    this.reportId = response.body.reportId;
-    callback(response.body);
   }
 
-  getReport() {
-    var currentTry = 1;
+  async start(conf) {
+    var response;
+    
+    try {
+      response = await this.apiClient.launchAnalysis(conf);
 
-    while (currentTry <= MAX_TRIES) {
-      console.log(`Try #${currentTry} for ${this.conf.url}`);
-      var response = Dareboost.request('analysis/report', {reportId: this.reportId});
-
-      if (response.body.status == 200) {
-        return new Report(this, this.reportId, response.body.report);
-      } else if (response.body.status == 202) {
-        sleep.msleep(TIME_BETWEEN_TRIES);
-        currentTry++;
-      } else {
-        throw new Error(`Error during report request for ${this.conf.url}: error ${response.body.status}`);
+      if (!response.reportId) {
+        throw new Error(`Dareboost says: ${response.message}"`)
       }
+
+      this.requestReport(response.reportId);
+    } catch (e) {
+      throw e;
+    }
+  }
+
+  async requestReport(reportId, triesQty = 1) {
+    if (triesQty > MAX_TRIES) {
+      throw new Error('Timeout for report request.');
     }
 
-    throw new Error('Timeout for report request.');
+    try {
+      console.log(`Trying to get the report #${triesQty}`);
+      const response = await this.apiClient.getAnalysisReport(reportId);
+
+      switch (response.status) {
+        case 202:
+          console.log(`Dareboost says: #${response.message}`);
+
+          setTimeout(() => {
+            try {
+              this.requestReport(reportId, ++triesQty);
+            } catch (e) {
+              throw e;
+            }
+          }, TIME_BETWEEN_TRIES);
+          break;
+  
+        case 200:
+          const report = new Report(response.report);
+
+          report.display();
+          break;
+      
+        default:
+          throw new Error(`Dareboost says: ${response.message}`);
+          break;
+      }
+    } catch (e) {
+      throw e;
+    }
   }
 }
 

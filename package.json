@@ -1,6 +1,6 @@
 {
   "name": "dareboost-automation",
-  "version": "1.0.0",
+  "version": "2.1.0",
   "description": "Automate Dareboost tests from multiple sources.",
   "main": "src/slack/index.js",
   "watch": {
@@ -22,7 +22,20 @@
     "type": "git",
     "url": "git@github.com:julienmession/slack-dareboost.git"
   },
-  "author": "jmession",
+  "author": {
+    "name": "Julien Mession"
+  },
+  "contributors": [
+    {
+      "name": "Kenny Durand"
+    },
+    {
+      "name": "Bastien Gatellier"
+    }
+  ],
+  "engines": {
+    "node": ">=7.6.0"
+  },
   "license": "ISC",
   "homepage": "https://github.com/julienmession/slack-dareboost",
   "dependencies": {
@@ -33,8 +46,7 @@
     "express": "^4.15.0",
     "mongoose": "^4.8.5",
     "request": "^2.81.0",
-    "sleep": "^5.1.1",
-    "sync-request": "^4.1.0",
+    "then-request": "^6.0.0",
     "time-ago": "^0.1.0",
     "webpagetest": "^0.3.5"
   }
